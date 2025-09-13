@@ -2,52 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom JW Player</title>
+  <meta name="viewport" content="width=device-width, maximum-scale=1.0, user-scalable=no">
+  <title>PLYR PLAYER</title>
+
+  <!-- Plyr CSS -->
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
   <style>
     body {
       margin: 0;
-      background: #000;
+      padding: 0;
+      background-color: #000;
+      height: 100vh;
+      overflow: hidden;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
     }
-    #jwplayerDiv {
+
+    video {
       width: 100%;
       height: 100%;
-      max-width: 100%;
-      max-height: 100%;
+      background: #000;
+    }
+
+    #myLogo {
+      width: 60px;
+      height: 40px;
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      z-index: 999;
     }
   </style>
 </head>
 <body>
-  <div id="jwplayerDiv"></div>
+  <!-- Video Player -->
+  <video id="player" playsinline controls autoplay></video>
+  <img id="myLogo" src="https://blogger.googleusercontent.com/img/a/AVvXsEiQ92h-ekVYskxW9qCgLvpQVMpAs4tqUQXnH9nDi37JW5B95V7Cq2Rz_mlGO68vTZmA2H5Qp4p8B0I9EUlW-6W1aVOZgITWN3xyE65Hd6G5G_D6HJFxiuXJaK-wMfYD0PiiUR9EBodkzuPH0-ubAMJQK_3F3rpDMEIJKCxlEzNZucpRzsumlBFXWqinGOw=s885" alt="Logo">
 
-  <!-- ✅ Load JWPlayer (single stable version) -->
-  <script src="https://cdn.jwplayer.com/libraries/SAHhwvZq.js"></script>
+  <!-- Plyr + HLS + DASH -->
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dashjs@4.5.0/dist/dash.all.min.js"></script>
 
   <script>
-    // Get stream link from URL
-    const queryParams = new URLSearchParams(window.location.search);
-    const streamUrl = queryParams.get('url');   // e.g. ?url=https://example.com/live.m3u8
+    // Get URL from query
+    const params = new URLSearchParams(window.location.search);
+    const streamUrl = params.get('url');
+
+    const video = document.getElementById('player');
 
     if (!streamUrl) {
-      document.body.innerHTML = "<h2 style='color:white;text-align:center;'>No stream URL provided</h2>";
+      document.body.innerHTML = "<h2 style='color:white;text-align:center;margin-top:20px;'>❌ No stream URL provided</h2>";
     } else {
-      jwplayer("jwplayerDiv").setup({
-        file: streamUrl,
-        autostart: true,
-        width: "100%",
-        height: "100%",
-        stretching: "uniform",
-        type: streamUrl.endsWith(".mpd") ? "dash" : "hls", // auto-detect
-        logo: {
-          file: "https://blogger.googleusercontent.com/img/a/AVvXsEiQ92h-ekVYskxW9qCgLvpQVMpAs4tqUQXnH9nDi37JW5B95V7Cq2Rz_mlGO68vTZmA2H5Qp4p8B0I9EUlW-6W1aVOZgITWN3xyE65Hd6G5G_D6HJFxiuXJaK-wMfYD0PiiUR9EBodkzuPH0-ubAMJQK_3F3rpDMEIJKCxlEzNZucpRzsumlBFXWqinGOw=s885",
-          link: "https://t.me/tv4wap"
+      if (streamUrl.endsWith(".m3u8")) {
+        // HLS
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource(streamUrl);
+          hls.attachMedia(video);
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = streamUrl;
         }
-      });
+      } else if (streamUrl.endsWith(".mpd")) {
+        // DASH
+        const player = dashjs.MediaPlayer().create();
+        player.initialize(video, streamUrl, true);
+      } else {
+        // MP4 or other
+        video.src = streamUrl;
+      }
     }
+
+    // Initialize Plyr
+    const player = new Plyr(video, {
+      autoplay: true,
+      ratio: "16:9"
+    });
   </script>
 </body>
 </html>
